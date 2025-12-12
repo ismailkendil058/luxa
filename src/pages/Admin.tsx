@@ -25,14 +25,6 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { data: settings, error: settingsError, isLoading: settingsLoading } = useAdminSettings();
 
-  const hashPassword = async (plainPassword: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(plainPassword);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -68,24 +60,13 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
       }
 
       if (settings) {
-        const hashedPassword = await hashPassword(password);
-        console.log('Password hash comparison:', {
-          inputHash: hashedPassword,
-          dbHash: settings.admin_password_hash,
-          match: hashedPassword === settings.admin_password_hash
-        });
-        if (hashedPassword === settings.admin_password_hash) {
+        // Simple plain text comparison (no hashing)
+        if (password === settings.admin_password_hash) {
           sessionStorage.setItem('admin_authenticated', 'true');
           sessionStorage.setItem('admin_auth_time', Date.now().toString());
           onLogin();
         } else {
-          console.error('Password mismatch:', {
-            inputHash: hashedPassword,
-            dbHash: settings.admin_password_hash,
-            dbHashLength: settings.admin_password_hash?.length,
-            isPlainText: settings.admin_password_hash === '1936'
-          });
-          setError('Mot de passe incorrect. Si le problème persiste, vérifiez que le hash du mot de passe dans la base de données est correct.');
+          setError('Mot de passe incorrect');
         }
       } else {
         console.error('Settings is null or undefined');
@@ -1038,23 +1019,15 @@ const SettingsTab = () => {
     });
   };
 
-  const hashPassword = async (plainPassword: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(plainPassword);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  };
-
   const handleChangePassword = async () => {
     if (newPassword.length < 4) {
       toast({ title: 'Le mot de passe doit contenir au moins 4 caractères', variant: 'destructive' });
       return;
     }
     try {
-      const hashedPassword = await hashPassword(newPassword);
+      // Store password as plain text (no hashing)
       updateSettings.mutate({
-        admin_password_hash: hashedPassword
+        admin_password_hash: newPassword
       }, {
         onSuccess: () => {
           toast({ title: 'Mot de passe mis à jour' });
@@ -1062,7 +1035,7 @@ const SettingsTab = () => {
         }
       });
     } catch (error) {
-      toast({ title: 'Erreur lors du hachage du mot de passe', variant: 'destructive' });
+      toast({ title: 'Erreur lors de la mise à jour du mot de passe', variant: 'destructive' });
     }
   };
 
