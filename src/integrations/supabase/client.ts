@@ -35,12 +35,13 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 
 // Log configuration (safely, without exposing full key)
 if (typeof window !== 'undefined') {
-  console.log('🔧 Supabase Configuration:', {
+  const config = {
     url: SUPABASE_URL || 'NOT SET',
     urlValid: SUPABASE_URL?.startsWith('https://') && SUPABASE_URL?.includes('.supabase.co'),
     keyExists: !!SUPABASE_PUBLISHABLE_KEY,
     keyLength: SUPABASE_PUBLISHABLE_KEY?.length || 0,
     keyStartsWithEyJ: SUPABASE_PUBLISHABLE_KEY?.startsWith('eyJ') || false,
+    keyPreview: SUPABASE_PUBLISHABLE_KEY ? `${SUPABASE_PUBLISHABLE_KEY.substring(0, 30)}...` : 'NOT SET',
     isConfigured: !!(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && 
       SUPABASE_URL !== 'https://placeholder.supabase.co' && 
       SUPABASE_PUBLISHABLE_KEY !== 'placeholder-key'),
@@ -48,8 +49,19 @@ if (typeof window !== 'undefined') {
       mode: import.meta.env.MODE,
       dev: import.meta.env.DEV,
       prod: import.meta.env.PROD,
-    }
-  });
+    },
+    projectId: SUPABASE_URL ? SUPABASE_URL.split('//')[1]?.split('.')[0] : null,
+    timestamp: new Date().toISOString(),
+  };
+  
+  console.log('🔧 Supabase Configuration:', config);
+  console.log('🔍 Full URL (for debugging):', SUPABASE_URL);
+  console.log('🔍 Key preview (first 30 chars):', config.keyPreview);
+  
+  // Warn if using placeholder or lovable database
+  if (SUPABASE_URL?.includes('lovable') || SUPABASE_URL?.includes('placeholder')) {
+    console.warn('⚠️ WARNING: Connected to Lovable/placeholder database! Update Vercel environment variables.');
+  }
 }
 
 export const supabase = createClient<Database>(
