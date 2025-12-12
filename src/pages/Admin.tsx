@@ -13,7 +13,7 @@ import { useOrders, useUpdateOrderStatus, useDeleteOrder } from '@/hooks/useOrde
 import { useWilayas, useUpdateWilaya } from '@/hooks/useWilayas';
 import { useAdminSettings, useUpdateAdminSettings } from '@/hooks/useAdminSettings';
 import { useAllProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
 import { Lock, Package, MapPin, Settings, LogOut, FileSpreadsheet, ShoppingBag, Plus, Pencil, Trash2, Upload, X, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Order, Wilaya, Product, categoryLabels, Category } from '@/types';
@@ -22,7 +22,7 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { data: settings } = useAdminSettings();
+  const { data: settings, error: settingsError, isLoading: settingsLoading } = useAdminSettings();
 
   const hashPassword = async (plainPassword: string): Promise<string> => {
     const encoder = new TextEncoder();
@@ -38,6 +38,28 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
     setError('');
     
     try {
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured()) {
+        setError('Configuration Supabase manquante. Vérifiez les variables d\'environnement VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY dans Vercel.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if settings are loading
+      if (settingsLoading) {
+        setError('Chargement des paramètres...');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for settings error
+      if (settingsError) {
+        console.error('Settings error:', settingsError);
+        setError('Erreur de connexion à la base de données. Vérifiez que Supabase est correctement configuré et que les variables d\'environnement sont définies dans Vercel.');
+        setIsLoading(false);
+        return;
+      }
+
       if (settings) {
         const hashedPassword = await hashPassword(password);
         if (hashedPassword === settings.admin_password_hash) {
@@ -48,10 +70,11 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
           setError('Mot de passe incorrect');
         }
       } else {
-        setError('Erreur de connexion');
+        setError('Impossible de charger les paramètres. Vérifiez la connexion à la base de données.');
       }
     } catch (err) {
-      setError('Erreur lors de la vérification');
+      console.error('Login error:', err);
+      setError('Erreur lors de la vérification. Vérifiez la console pour plus de détails.');
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +105,25 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
           </div>
           
           {error && (
-            <p className="text-destructive text-sm">{error}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+              <p className="text-destructive text-sm font-medium">{error}</p>
+              {error.includes('Configuration Supabase') && (
+                <p className="text-destructive/80 text-xs mt-2">
+                  Pour Vercel: Allez dans Settings → Environment Variables et ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY
+                </p>
+              )}
+            </div>
+          )}
+          
+          {settingsError && !error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+              <p className="text-destructive text-sm font-medium">
+                Erreur de connexion à Supabase
+              </p>
+              <p className="text-destructive/80 text-xs mt-1">
+                {settingsError instanceof Error ? settingsError.message : 'Vérifiez les variables d\'environnement'}
+              </p>
+            </div>
           )}
           
           <Button type="submit" className="w-full" disabled={isLoading}>

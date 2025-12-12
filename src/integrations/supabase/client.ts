@@ -6,14 +6,28 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Validate environment variables
+const isDevelopment = import.meta.env.DEV;
+const isProduction = import.meta.env.PROD;
+
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error(
+  const errorMessage = 
     'Missing Supabase environment variables!\n' +
-    'Please create a .env.local file with:\n' +
+    (isProduction 
+      ? 'For Vercel deployment:\n' +
+        '1. Go to Vercel Dashboard > Your Project > Settings > Environment Variables\n' +
+        '2. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY\n' +
+        '3. Make sure they are set for Production environment\n' +
+        '4. Redeploy your application\n\n'
+      : 'For local development:\n' +
+        'Create a .env.local file with:\n') +
     'VITE_SUPABASE_URL=your_project_url\n' +
     'VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key\n\n' +
-    'Get these from: https://supabase.com/dashboard > Your Project > Settings > API'
-  );
+    'Get these from: https://supabase.com/dashboard > Your Project > Settings > API';
+  
+  console.error(errorMessage);
+  
+  // In production, we should still create the client but it will fail on actual requests
+  // This allows the app to load and show proper error messages
 }
 
 // Import the supabase client like this:
@@ -24,9 +38,16 @@ export const supabase = createClient<Database>(
   SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
   {
     auth: {
-      storage: localStorage,
+      storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
     }
   }
 );
+
+// Export a function to check if Supabase is properly configured
+export const isSupabaseConfigured = (): boolean => {
+  return !!(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && 
+    SUPABASE_URL !== 'https://placeholder.supabase.co' && 
+    SUPABASE_PUBLISHABLE_KEY !== 'placeholder-key');
+};

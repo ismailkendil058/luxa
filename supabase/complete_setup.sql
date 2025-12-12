@@ -47,7 +47,7 @@ CREATE TABLE public.orders (
 
 CREATE TABLE public.admin_settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    admin_password_hash TEXT NOT NULL DEFAULT '1936',
+    admin_password_hash TEXT NOT NULL DEFAULT '3f46bdea034f311a14efe877f5592d84a7a6c97d9b917be3f55573311e6cdda7',
     default_shipping_bureau DECIMAL(10, 2) NOT NULL DEFAULT 500 CHECK (default_shipping_bureau >= 0),
     default_shipping_domicile DECIMAL(10, 2) NOT NULL DEFAULT 800 CHECK (default_shipping_domicile >= 0),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -249,7 +249,7 @@ ON CONFLICT (id) DO UPDATE SET
     is_active = EXCLUDED.is_active;
 
 INSERT INTO public.admin_settings (id, admin_password_hash, default_shipping_bureau, default_shipping_domicile)
-VALUES (1, '1936', 500, 800)
+VALUES (1, '3f46bdea034f311a14efe877f5592d84a7a6c97d9b917be3f55573311e6cdda7', 500, 800)
 ON CONFLICT (id) DO UPDATE SET
     admin_password_hash = COALESCE(EXCLUDED.admin_password_hash, admin_settings.admin_password_hash),
     default_shipping_bureau = COALESCE(EXCLUDED.default_shipping_bureau, admin_settings.default_shipping_bureau),
