@@ -1,128 +1,153 @@
-# Fix: Website Connected to Wrong Database
+# Fix: Website Connected to Wrong Database (Lovable Database)
 
 ## The Problem
 
 Your website is showing data from the **Lovable database** instead of **your own Supabase database**. This means the environment variables in Vercel are pointing to the wrong Supabase project.
 
-## Quick Fix
+## How to Check Which Database You're Connected To
 
-### Step 1: Find Your Correct Supabase Project
+### Option 1: Use Diagnostics Page
+
+1. Go to your deployed site: `https://your-site.vercel.app/diagnostics`
+2. Click **Run Full Diagnostic**
+3. Look at **VITE_SUPABASE_URL**:
+   - If it shows a Lovable URL or placeholder → **WRONG DATABASE** ❌
+   - If it shows your own Supabase URL → **CORRECT DATABASE** ✅
+
+### Option 2: Check Browser Console
+
+1. Open your deployed site
+2. Press **F12** → **Console** tab
+3. Look for: `🔧 Supabase Configuration:`
+4. Check the `url` value:
+   - If it contains "lovable" or "placeholder" → **WRONG** ❌
+   - If it's your own Supabase URL → **CORRECT** ✅
+
+### Option 3: Check Vercel Environment Variables
+
+1. Go to **Vercel Dashboard** → Your Project → **Settings** → **Environment Variables**
+2. Click on `VITE_SUPABASE_URL` to see its value
+3. Check if it's:
+   - Your own Supabase URL → ✅ Correct
+   - Lovable URL or placeholder → ❌ Wrong
+
+## The Fix: Update Environment Variables in Vercel
+
+### Step 1: Get Your Own Supabase Credentials
 
 1. Go to [supabase.com](https://supabase.com)
-2. Log in and select **YOUR project** (not Lovable's)
-3. Go to **Settings** → **API**
-4. Copy your **Project URL** (looks like `https://xxxxx.supabase.co`)
-5. Copy your **anon public key**
+2. **Make sure you're logged into YOUR account** (not Lovable's)
+3. Select **YOUR project** (the one you created)
+4. Go to **Settings** (gear icon) → **API**
+5. Copy these values:
+   - **Project URL**: `https://xxxxx.supabase.co` (YOUR project URL)
+   - **anon public key**: `eyJ...` (YOUR anon key)
 
 ### Step 2: Update Vercel Environment Variables
 
 1. Go to [vercel.com](https://vercel.com) → Your Project
 2. **Settings** → **Environment Variables**
-3. Find `VITE_SUPABASE_URL`
-4. **Edit** it and replace with **YOUR Supabase project URL**
-5. Find `VITE_SUPABASE_PUBLISHABLE_KEY`
-6. **Edit** it and replace with **YOUR Supabase anon key**
-7. Make sure both are enabled for **Production**
-8. **Save**
+3. Find `VITE_SUPABASE_URL`:
+   - Click on it to edit
+   - **Delete the old value** (Lovable URL)
+   - **Paste YOUR Supabase Project URL**
+   - Make sure **Production** is checked ✅
+   - Click **Save**
+4. Find `VITE_SUPABASE_PUBLISHABLE_KEY`:
+   - Click on it to edit
+   - **Delete the old value** (Lovable key)
+   - **Paste YOUR Supabase anon public key**
+   - Make sure **Production** is checked ✅
+   - Click **Save**
 
 ### Step 3: Redeploy (CRITICAL!)
 
+**You MUST redeploy after changing environment variables:**
+
 1. Go to **Deployments** tab
-2. Click **⋯** on latest deployment
+2. Click the three dots (⋯) on latest deployment
 3. Click **Redeploy**
-4. Wait for deployment to finish
+4. Wait for deployment to complete
 
-### Step 4: Verify
+### Step 4: Verify It's Fixed
 
-1. Go to `/diagnostics` on your deployed site
-2. Click "Run Full Diagnostic"
-3. Check the **Project ID** shown
-4. It should match **YOUR Supabase project ID** (from your Supabase dashboard)
+1. Go to `/diagnostics` page
+2. Run diagnostic again
+3. Check **VITE_SUPABASE_URL**:
+   - Should now show **YOUR Supabase URL** ✅
+   - Should NOT show Lovable or placeholder ❌
+4. Your products should now show from YOUR database!
 
-## How to Check Which Database You're Connected To
+## How to Identify Your Database
 
-### Option 1: Use Diagnostics Page
+### Your Database URL Should Look Like:
+```
+https://nfitxqhzfvcdnviuiakb.supabase.co
+```
+(Your actual project ID will be different)
 
-1. Go to `https://your-site.vercel.app/diagnostics`
-2. Click "Run Full Diagnostic"
-3. Look at the **Project ID** shown
-4. Compare it with your Supabase project ID
+### Wrong Database URLs Look Like:
+```
+https://lovable-xxxxx.supabase.co  ❌
+https://placeholder.supabase.co     ❌
+https://xxxxx.lovable.dev          ❌
+```
 
-### Option 2: Check Browser Console
+## Common Mistakes
 
-1. Open your deployed site
-2. Press **F12** → **Console**
-3. Look for: `🔧 Supabase Configuration:`
-4. Check the `url` value
-5. The project ID is the part before `.supabase.co`
+### ❌ Mistake 1: Using Lovable's Database
+- **Problem**: Environment variables point to Lovable's Supabase project
+- **Fix**: Update to YOUR own Supabase project URL and key
 
-### Option 3: Check Vercel Environment Variables
+### ❌ Mistake 2: Not Redeploying After Update
+- **Problem**: Changed variables but didn't redeploy
+- **Fix**: **MUST redeploy** after changing environment variables
 
-1. Vercel Dashboard → Settings → Environment Variables
-2. Check the value of `VITE_SUPABASE_URL`
-3. The project ID is: `https://[PROJECT-ID].supabase.co`
+### ❌ Mistake 3: Wrong Supabase Project
+- **Problem**: Using a different Supabase project than intended
+- **Fix**: Make sure you're using the correct project URL
 
-## Find Your Supabase Project ID
+### ❌ Mistake 4: Local vs Production Mismatch
+- **Problem**: Local uses your database, Vercel uses Lovable's
+- **Fix**: Make sure Vercel uses the SAME database as local
 
-1. Go to Supabase Dashboard
-2. Select your project
-3. Go to **Settings** → **General**
-4. Your **Project ID** is shown there
-5. Or check the URL: `https://[PROJECT-ID].supabase.co`
+## Quick Checklist
 
-## Common Issues
+- [ ] Identified which database you're connected to (use `/diagnostics`)
+- [ ] Got YOUR Supabase credentials (URL and anon key)
+- [ ] Updated `VITE_SUPABASE_URL` in Vercel to YOUR URL
+- [ ] Updated `VITE_SUPABASE_PUBLISHABLE_KEY` in Vercel to YOUR key
+- [ ] Enabled for **Production** environment
+- [ ] **Redeployed** the application
+- [ ] Verified `/diagnostics` shows YOUR database URL
+- [ ] Verified products show from YOUR database
 
-### Issue 1: Still Showing Lovable Data
+## Still Showing Wrong Data?
 
-**Cause:** Didn't redeploy after updating variables
+1. **Clear Browser Cache:**
+   - Hard refresh: Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)
+   - Or use incognito/private window
 
-**Fix:** 
-- Go to Deployments → Redeploy
-- Wait for it to finish
-- Clear browser cache and reload
+2. **Double-Check Vercel Variables:**
+   - Make sure they're YOUR Supabase credentials
+   - Not Lovable's credentials
 
-### Issue 2: Variables Updated But Wrong Project
+3. **Verify Supabase Project:**
+   - Go to YOUR Supabase dashboard
+   - Check that YOUR products are there
+   - Make sure you're using the correct project
 
-**Cause:** Copied wrong URL/key
-
-**Fix:**
-- Double-check you copied from YOUR Supabase project
-- Not from Lovable's project
-- Verify in Supabase Dashboard → Settings → API
-
-### Issue 3: Local Works But Vercel Doesn't
-
-**Cause:** Local uses `.env.local` with correct values, Vercel has wrong values
-
-**Fix:**
-- Update Vercel environment variables to match your `.env.local`
-- Make sure they're the same project
-
-## Verify It's Fixed
-
-After updating and redeploying:
-
-1. **Check Diagnostics Page:**
-   - `/diagnostics` → Run Full Diagnostic
-   - Project ID should match YOUR project
-
-2. **Check Your Data:**
-   - Products should be YOUR products
-   - Orders should be YOUR orders
-   - Not Lovable's data
-
-3. **Add a Test Product:**
-   - Add a product in your Supabase dashboard
-   - It should appear on your website
-   - If it doesn't, you're still connected to wrong database
+4. **Check Build Logs:**
+   - Vercel → Deployments → Latest → Build Logs
+   - Look for any errors
 
 ## Summary
 
 **The fix:**
-1. Get YOUR Supabase project URL and key
-2. Update Vercel environment variables
-3. **Redeploy** (very important!)
-4. Verify with diagnostics page
+1. Get YOUR Supabase credentials
+2. Update Vercel environment variables to YOUR database
+3. **Redeploy**
+4. Done! ✅
 
-Your website will then show data from YOUR database, not Lovable's! ✅
+Your website will now show data from YOUR database, not Lovable's.
 

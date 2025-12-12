@@ -30,7 +30,8 @@ const Diagnostics = () => {
           value: SUPABASE_URL || 'NOT SET',
           length: SUPABASE_URL?.length || 0,
           isValid: SUPABASE_URL?.startsWith('https://') && SUPABASE_URL?.includes('.supabase.co'),
-          projectId: SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'Unknown',
+          projectId: SUPABASE_URL ? SUPABASE_URL.split('//')[1]?.split('.')[0] : null,
+          isLovableDatabase: SUPABASE_URL?.includes('lovable') || SUPABASE_URL?.includes('placeholder'),
         },
         key: {
           exists: !!SUPABASE_KEY,
@@ -165,16 +166,13 @@ const Diagnostics = () => {
                   </div>
                   <div className="text-xs text-muted-foreground mt-1 space-y-1">
                     <div>Length: {results.envVars.url.length} | Valid format: {results.envVars.url.isValid ? '✅' : '❌'}</div>
-                    <div className="font-semibold text-foreground">
-                      Project ID: <span className="font-mono">{results.envVars.url.projectId}</span>
-                    </div>
-                    {results.envVars.url.projectId !== 'Unknown' && (
-                      <Alert variant="default" className="mt-2">
-                        <AlertDescription className="text-xs">
-                          ⚠️ Make sure this Project ID matches your Supabase project. 
-                          If it's wrong, update VITE_SUPABASE_URL in Vercel environment variables.
-                        </AlertDescription>
-                      </Alert>
+                    {results.envVars.url.projectId && (
+                      <div>Project ID: <strong>{results.envVars.url.projectId}</strong></div>
+                    )}
+                    {results.envVars.url.isLovableDatabase && (
+                      <div className="text-destructive font-medium">
+                        ⚠️ WARNING: Connected to Lovable/placeholder database! Update to your own database.
+                      </div>
                     )}
                   </div>
                 </div>
