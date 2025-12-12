@@ -14,6 +14,7 @@ import { useWilayas, useUpdateWilaya } from '@/hooks/useWilayas';
 import { useAdminSettings, useUpdateAdminSettings } from '@/hooks/useAdminSettings';
 import { useAllProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
+import { SupabaseConnectionTest } from '@/components/SupabaseConnectionTest';
 import { Lock, Package, MapPin, Settings, LogOut, FileSpreadsheet, ShoppingBag, Plus, Pencil, Trash2, Upload, X, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Order, Wilaya, Product, categoryLabels, Category } from '@/types';
@@ -55,26 +56,45 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
       // Check for settings error
       if (settingsError) {
         console.error('Settings error:', settingsError);
-        setError('Erreur de connexion à la base de données. Vérifiez que Supabase est correctement configuré et que les variables d\'environnement sont définies dans Vercel.');
+        console.error('Error details:', {
+          message: settingsError instanceof Error ? settingsError.message : String(settingsError),
+          supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+          hasKey: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          isConfigured: isSupabaseConfigured()
+        });
+        setError(`Erreur de connexion à la base de données: ${settingsError instanceof Error ? settingsError.message : 'Erreur inconnue'}. Vérifiez que Supabase est correctement configuré et que les variables d'environnement sont définies dans Vercel.`);
         setIsLoading(false);
         return;
       }
 
       if (settings) {
         const hashedPassword = await hashPassword(password);
+        console.log('Password hash comparison:', {
+          inputHash: hashedPassword,
+          dbHash: settings.admin_password_hash,
+          match: hashedPassword === settings.admin_password_hash
+        });
         if (hashedPassword === settings.admin_password_hash) {
           sessionStorage.setItem('admin_authenticated', 'true');
           sessionStorage.setItem('admin_auth_time', Date.now().toString());
           onLogin();
         } else {
-          setError('Mot de passe incorrect');
+          console.error('Password mismatch:', {
+            inputHash: hashedPassword,
+            dbHash: settings.admin_password_hash,
+            dbHashLength: settings.admin_password_hash?.length,
+            isPlainText: settings.admin_password_hash === '1936'
+          });
+          setError('Mot de passe incorrect. Si le problème persiste, vérifiez que le hash du mot de passe dans la base de données est correct.');
         }
       } else {
+        console.error('Settings is null or undefined');
         setError('Impossible de charger les paramètres. Vérifiez la connexion à la base de données.');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Erreur lors de la vérification. Vérifiez la console pour plus de détails.');
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace');
+      setError(`Erreur lors de la vérification: ${err instanceof Error ? err.message : 'Erreur inconnue'}. Vérifiez la console pour plus de détails.`);
     } finally {
       setIsLoading(false);
     }
@@ -82,14 +102,17 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-primary" />
           </div>
           <h1 className="font-display text-2xl text-foreground">Administration LUXA</h1>
           <p className="text-muted-foreground mt-2">Entrez le mot de passe pour accéder</p>
         </div>
+
+        {/* Connection Test Component */}
+        <SupabaseConnectionTest />
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

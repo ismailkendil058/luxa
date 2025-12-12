@@ -33,6 +33,25 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Log configuration (safely, without exposing full key)
+if (typeof window !== 'undefined') {
+  console.log('🔧 Supabase Configuration:', {
+    url: SUPABASE_URL || 'NOT SET',
+    urlValid: SUPABASE_URL?.startsWith('https://') && SUPABASE_URL?.includes('.supabase.co'),
+    keyExists: !!SUPABASE_PUBLISHABLE_KEY,
+    keyLength: SUPABASE_PUBLISHABLE_KEY?.length || 0,
+    keyStartsWithEyJ: SUPABASE_PUBLISHABLE_KEY?.startsWith('eyJ') || false,
+    isConfigured: !!(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && 
+      SUPABASE_URL !== 'https://placeholder.supabase.co' && 
+      SUPABASE_PUBLISHABLE_KEY !== 'placeholder-key'),
+    environment: {
+      mode: import.meta.env.MODE,
+      dev: import.meta.env.DEV,
+      prod: import.meta.env.PROD,
+    }
+  });
+}
+
 export const supabase = createClient<Database>(
   SUPABASE_URL || 'https://placeholder.supabase.co',
   SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',

@@ -12,7 +12,7 @@ const Shop = () => {
   const categoryParam = searchParams.get('category') as Category | null;
   const [priceFilter, setPriceFilter] = useState<string>('all');
   
-  const { data: products, isLoading } = useProducts();
+  const { data: products, isLoading, error: productsError } = useProducts();
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -90,6 +90,19 @@ const Shop = () => {
           </Select>
         </div>
 
+        {/* Error Message */}
+        {productsError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
+            <p className="text-destructive font-medium">Erreur de connexion à la base de données</p>
+            <p className="text-destructive/80 text-sm mt-1">
+              {productsError instanceof Error ? productsError.message : 'Impossible de charger les produits'}
+            </p>
+            <p className="text-destructive/60 text-xs mt-2">
+              Vérifiez que les variables d'environnement VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY sont définies dans Vercel.
+            </p>
+          </div>
+        )}
+
         {/* Products Grid */}
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -100,6 +113,13 @@ const Shop = () => {
                 <div className="mt-2 h-4 bg-muted rounded w-1/2" />
               </div>
             ))}
+          </div>
+        ) : productsError ? (
+          <div className="text-center py-16">
+            <p className="text-destructive font-medium">Erreur de chargement</p>
+            <p className="text-muted-foreground text-sm mt-2">
+              Impossible de se connecter à la base de données. Vérifiez la configuration Supabase.
+            </p>
           </div>
         ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
