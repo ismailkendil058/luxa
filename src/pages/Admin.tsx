@@ -187,13 +187,29 @@ const OrdersTab = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteOrder.mutateAsync(id);
-      toast({ title: 'Commande supprimée' });
+      toast({ title: 'Commande supprimée', description: 'La commande a été supprimée avec succès' });
       setDeleteConfirmId(null);
     } catch (error: any) {
       console.error('Delete error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      let errorMessage = error.message || 'Impossible de supprimer la commande.';
+      
+      // Provide more specific error messages
+      if (error.code === '42501' || error.message?.includes('permission denied') || error.message?.includes('policy')) {
+        errorMessage = 'Erreur de permissions. Vérifiez que la politique de suppression est activée dans Supabase.';
+      } else if (error.code === 'PGRST116') {
+        errorMessage = 'Commande introuvable ou déjà supprimée.';
+      }
+      
       toast({ 
         title: 'Erreur lors de la suppression', 
-        description: error.message || 'Impossible de supprimer la commande. Vérifiez les permissions de la base de données.', 
+        description: errorMessage, 
         variant: 'destructive' 
       });
     }

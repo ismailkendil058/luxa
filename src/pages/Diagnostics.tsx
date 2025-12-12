@@ -30,6 +30,7 @@ const Diagnostics = () => {
           value: SUPABASE_URL || 'NOT SET',
           length: SUPABASE_URL?.length || 0,
           isValid: SUPABASE_URL?.startsWith('https://') && SUPABASE_URL?.includes('.supabase.co'),
+          projectId: SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'Unknown',
         },
         key: {
           exists: !!SUPABASE_KEY,
@@ -162,9 +163,19 @@ const Diagnostics = () => {
                   <div className="bg-muted p-2 rounded text-sm font-mono break-all">
                     {results.envVars.url.value}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Length: {results.envVars.url.length} | 
-                    Valid format: {results.envVars.url.isValid ? '✅' : '❌'}
+                  <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                    <div>Length: {results.envVars.url.length} | Valid format: {results.envVars.url.isValid ? '✅' : '❌'}</div>
+                    <div className="font-semibold text-foreground">
+                      Project ID: <span className="font-mono">{results.envVars.url.projectId}</span>
+                    </div>
+                    {results.envVars.url.projectId !== 'Unknown' && (
+                      <Alert variant="default" className="mt-2">
+                        <AlertDescription className="text-xs">
+                          ⚠️ Make sure this Project ID matches your Supabase project. 
+                          If it's wrong, update VITE_SUPABASE_URL in Vercel environment variables.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 </div>
 

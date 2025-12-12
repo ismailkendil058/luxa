@@ -88,6 +88,8 @@ export const useDeleteOrder = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      console.log('Attempting to delete order:', id);
+      
       const { data, error } = await supabase
         .from('orders')
         .delete()
@@ -95,10 +97,27 @@ export const useDeleteOrder = () => {
         .select();
       
       if (error) {
-        console.error('Supabase delete error:', error);
-        throw new Error(error.message || 'Erreur lors de la suppression de la commande');
+        console.error('Supabase delete error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          fullError: error
+        });
+        
+        // Provide more detailed error information
+        let errorMessage = error.message || 'Erreur lors de la suppression de la commande';
+        
+        if (error.code === '42501' || error.message?.includes('permission denied') || error.message?.includes('policy')) {
+          errorMessage = 'Permission refusée. Vérifiez que la politique de suppression est activée dans Supabase (RLS policies).';
+        } else if (error.code === 'PGRST116') {
+          errorMessage = 'Commande introuvable ou déjà supprimée.';
+        }
+        
+        throw new Error(errorMessage);
       }
       
+      console.log('Order deleted successfully:', data);
       return data;
     },
     onSuccess: () => {
